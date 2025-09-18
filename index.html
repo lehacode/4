@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#4facfe">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Quản lý Công việc">
+    <title>📋 Hệ thống Quản lý Công việc</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .role-toggle {
+            display: flex;
+            background: rgba(255,255,255,0.2);
+            border-radius: 25px;
+            padding: 4px;
+            margin-top: 15px;
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .role-btn.active {
+            background: white;
+            color: #4facfe;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .connection-status {
+            padding: 10px;
+            text-align: center;
+            font-size: 0.8rem;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+
+        .online {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .offline {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .setup-notice {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            margin: 10px;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            display: none;
+        }
+
+        .setup-notice h4 {
+            margin-bottom: 8px;
+            color: #155724;
+        }
+
+        .content {
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .manager-section, .employee-section {
+            display: none;
+        }
+
+        .manager-section.active, .employee-section.active {
+            display: block;
+        }
+
+        .add-task-form {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 2px dashed #4facfe;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .employee-select {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .task-list {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .task-list h3 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .task-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.3s;
+        }
+
+        .task-item:last-child {
+            border-bottom: none;
+        }
+
+        .task-item.completed {
+            background: #f0f9f0;
+        }
+
+        .task-item.completed .task-title {
+            text-decoration: line-through;
+            color: #666;
+        }
+
+        .task-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .task-description {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .task-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 10px;
+        }
+
+        .task-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .completion-info {
+            background: #e7f3ff;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4facfe;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .employee-complete-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .employee-complete-btn:hover {
+            background: #218838;
+        }
+
+        .employee-complete-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 0;
+            }
+            
+            .content {
+                padding: 15px;
+            }
+            
+            .header {
+                padding: 15px;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Hệ thống Quản lý Công việc</h1>
+            <div class="role-toggle">
+                <button class="role-btn active" id="managerBtn">👨‍💼 Quản lý</button>
+                <button class="role-btn" id="employeeBtn">👷‍♂️ Nhân viên</button>
+            </div>
+            <div id="connectionStatus" class="connection-status offline">
+                🔴 Đang kết nối database...
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="setupNotice" class="setup-notice">
+                <h4>✅ Hệ thống đã sẵn sàng!</h4>
+                <p>Firebase đã được cấu hình và kết nối thành công. Dữ liệu sẽ đồng bộ tự động giữa tất cả các thiết bị.</p>
+                <p><strong>Hướng dẫn sử dụng:</strong> Quản lý thêm công việc, nhân viên chọn tên và hoàn thành task.</p>
+            </div>
+
+            <div id="loadingMessage" class="loading">
+                🔄 Đang tải dữ liệu...
+            </div>
+
+            <!-- Manager Interface -->
+            <div class="manager-section active" id="managerSection">
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalTasks">0</div>
+                        <div class="stat-label">Tổng công việc</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="completedTasks">0</div>
+                        <div class="stat-label">Đã hoàn thành</div>
+                    </div>
+                </div>
+
+                <div class="add-task-form">
+                    <h3>➕ Thêm công việc mới</h3>
+                    <div class="form-group">
+                        <label for="taskTitle">Tiêu đề công việc:</label>
+                        <input type="text" id="taskTitle" placeholder="Nhập tên công việc...">
+                    </div>
+                    <div class="form-group">
+                        <label for="taskDescription">Mô tả:</label>
+                        <textarea id="taskDescription" rows="3" placeholder="Mô tả chi tiết công việc..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskPriority">Độ ưu tiên:</label>
+                        <select id="taskPriority">
+                            <option value="Thấp">🟢 Thấp</option>
+                            <option value="Trung bình">🟡 Trung bình</option>
+                            <option value="Cao">🔴 Cao</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="assignTo">Giao cho:</label>
+                        <select id="assignTo">
+                            <option value="">-- Tất cả nhân viên --</option>
+                            <option value="Nguyễn Văn A">Nguyễn Văn A</option>
+                            <option value="Trần Thị B">Trần Thị B</option>
+                            <option value="Lê Văn C">Lê Văn C</option>
+                            <option value="Phạm Thị D">Phạm Thị D</option>
+                            <option value="Hoàng Văn E">Hoàng Văn E</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" id="addTaskBtn">Thêm công việc</button>
+                </div>
+
+                <div class="task-list">
+                    <h3>📋 Danh sách công việc</h3>
+                    <div id="managerTaskList"></div>
+                </div>
+            </div>
+
+            <!-- Employee Interface -->
+            <div class="employee-section" id="employeeSection">
+                <div class="employee-select">
+                    <label for="employeeName">👤 Chọn tên của bạn:</label>
+                    <select id="employeeName">
+                        <option value="">-- Chọn tên --</option>
+                        <option value="Nguyễn Văn A">Nguyễn Văn A</option>
+                        <option value="Trần Thị B">Trần Thị B</option>
+                        <option value="Lê Văn C">Lê Văn C</option>
+                        <option value="Phạm Thị D">Phạm Thị D</option>
+                        <option value="Hoàng Văn E">Hoàng Văn E</option>
+                    </select>
+                </div>
+
+                <div class="task-list">
+                    <h3>✅ Công việc cần làm</h3>
+                    <div id="employeeTaskList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cấu hình Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyABkEBU-WfsmAKYbbQzFL1rVl1FhYmyJEU",
+            authDomain: "task-manager-2025-ac725.firebaseapp.com",
+            databaseURL: "https://task-manager-2025-ac725-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "task-manager-2025-ac725",
+            storageBucket: "task-manager-2025-ac725.firebasestorage.app",
+            messagingSenderId: "971332334564",
+            appId: "1:971332334564:web:9edbb1d56068f021bb8df1"
+        };
+
+        // Biến toàn cục
+        let database = null;
+        let isOnline = false;
+        let tasks = [];
+        let currentRole = 'manager';
+        let tasksListener = null;
+
+        // App Manager Class
+        class TaskManager {
+            constructor() {
+                this.initializeApp();
+                this.setupEventListeners();
+            }
+
+            async initializeApp() {
+                console.log('🚀 Khởi tạo ứng dụng...');
+                
+                try {
+                    if (!firebase.apps.length) {
+                        firebase.initializeApp(firebaseConfig);
+                    }
+                    database = firebase.database();
+                    
+                    // Test kết nối
+                    const testRef = database.ref('.info/connected');
+                    testRef.on('value', (snapshot) => {
+                        if (snapshot.val() === true) {
+                            isOnline = true;
+                            this.updateConnectionStatus(true);
+                            console.log('✅ Firebase kết nối thành công!');
+                            this.loadTasksFromFirebase();
+                            this.showSetupNotice();
+                        } else {
+                            isOnline = false;
+                            this.updateConnectionStatus(false);
+                            console.log('❌ Firebase mất kết nối');
+                            this.loadTasksFromLocalStorage();
+                        }
+                    });
+                    
+                } catch (error) {
+                    console.error('❌ Lỗi kết nối Firebase:', error);
+                    isOnline = false;
+                    this.updateConnectionStatus(false);
+                    this.loadTasksFromLocalStorage();
+                }
+            }
+
+            setupEventListeners() {
+                // Role switching
+                document.getElementById('managerBtn').addEventListener('click', () => this.switchRole('manager'));
+                document.getElementById('employeeBtn').addEventListener('click', () => this.switchRole('employee'));
+                
+                // Add task
+                document.getElementById('addTaskBtn').addEventListener('click', () => this.addTask());
+                
+                // Employee name change
+                document.getElementById('employeeName').addEventListener('change', () => this.updateEmployeeView());
+                
+                // Cleanup on unload
+                window.addEventListener('beforeunload', () => {
+                    if (tasksListener) {
+                        tasksListener.off();
+                    }
+                });
+            }
+
+            switchRole(role) {
+                currentRole = role;
+                
+                // Update button states
+                document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
+                document.getElementById(role === 'manager' ? 'managerBtn' : 'employeeBtn').classList.add('active');
+
+                // Show/hide sections
+                const managerSection = document.getElementById('managerSection');
+                const employeeSection = document.getElementById('employeeSection');
+                
+                if (role === 'manager') {
+                    managerSection.style.display = 'block';
+                    employeeSection.style.display = 'none';
+                    this.updateManagerView();
+                } else {
+                    managerSection.style.display = 'none';
+                    employeeSection.style.display = 'block';
+                    this.updateEmployeeView();
+                }
+            }
+
+            loadTasksFromFirebase() {
+                console.log('📥 Đang tải dữ liệu từ Firebase...');
+                
+                if (tasksListener) {
+                    tasksListener.off();
+                }
+                
+                const tasksRef = database.ref('tasks');
+                tasksListener = tasksRef.on('value', (snapshot) => {
+                    try {
+                        const data = snapshot.val();
+                        console.log('📊 Dữ liệu Firebase:', data);
+                        
+                        if (data && typeof data === 'object') {
+                            tasks = Object.keys(data).map(key => ({
+                                ...data[key],
+                                firebaseKey: key
+                            }));
+                        } else {
+                            tasks = [];
+                        }
+                        
+                        tasks.sort((a, b) => (b.id || 0) - (a.id || 0));
+                        console.log('✅ Đã tải', tasks.length, 'công việc từ Firebase');
+                        
+                        this.updateAllViews();
+                        this.hideLoading();
+                        
+                    } catch (error) {
+                        console.error('❌ Lỗi xử lý dữ liệu Firebase:', error);
+                        this.loadTasksFromLocalStorage();
+                    }
+                });
+            }
+
+            loadTasksFromLocalStorage() {
+                console.log('📱 Đang tải dữ liệu từ localStorage...');
+                try {
+                    const savedTasks = localStorage.getItem('taskManagementTasks');
+                    tasks = savedTasks ? JSON.parse(savedTasks) : [];
+                    console.log('✅ Đã tải', tasks.length, 'công việc từ localStorage');
+                } catch (error) {
+                    console.error('❌ Lỗi đọc localStorage:', error);
+                    tasks = [];
+                }
+                this.updateAllViews();
+                this.hideLoading();
+                
+                // Thêm dữ liệu mẫu nếu trống
+                setTimeout(() => this.addSampleDataIfEmpty(), 2000);
+            }
+
+            saveTasksToFirebase() {
+                if (!isOnline || !database) {
+                    console.log('⚠️ Offline - lưu vào localStorage');
+                    this.saveTasksToLocalStorage();
+                    return;
+                }
+                
+                console.log('💾 Đang lưu', tasks.length, 'công việc lên Firebase...');
+                
+                const tasksRef = database.ref('tasks');
+                const tasksObj = {};
+                
+                tasks.forEach((task, index) => {
+                    const key = task.firebaseKey || `task_${task.id || Date.now()}_${index}`;
+                    tasksObj[key] = {
+                        id: task.id,
+                        title: task.title,
+                        description: task.description,
+                        priority: task.priority,
+                        assignTo: task.assignTo,
+                        completed: task.completed,
+                        completedBy: task.completedBy,
+                        completedAt: task.completedAt,
+                        createdAt: task.createdAt
+                    };
+                });
+                
+                tasksRef.set(tasksObj)
+                    .then(() => {
+                        console.log('✅ Lưu Firebase thành công');
+                        this.saveTasksToLocalStorage();
+                    })
+                    .catch((error) => {
+                        console.error('❌ Lỗi lưu Firebase:', error);
+                        this.saveTasksToLocalStorage();
+                    });
+            }
+
+            saveTasksToLocalStorage() {
+                try {
+                    localStorage.setItem('taskManagementTasks', JSON.stringify(tasks));
+                    console.log('✅ Đã lưu vào localStorage');
+                } catch (error) {
+                    console.error('❌ Lỗi lưu localStorage:', error);
+                }
+            }
+
+            addTask() {
+                const title = document.getElementById('taskTitle').value.trim();
+                const description = document.getElementById('taskDescription').value.trim();
+                const priority = document.getElementById('taskPriority').value;
+                const assignTo = document.getElementById('assignTo').value;
+
+                if (!title) {
+                    alert('Vui lòng nhập tiêu đề công việc!');
+                    return;
+                }
+
+                const btn = document.getElementById('addTaskBtn');
+                btn.disabled = true;
+                btn.textContent = 'Đang thêm...';
+
+                const task = {
+                    id: Date.now(),
+                    title: title,
+                    description: description,
+                    priority: priority,
+                    assignTo: assignTo,
+                    completed: false,
+                    completedBy: '',
+                    completedAt: '',
+                    createdAt: new Date().toLocaleString('vi-VN')
+                };
+
+                tasks.unshift(task);
+                this.saveTasksToFirebase();
+
+                // Reset form
+                document.getElementById('taskTitle').value = '';
+                document.getElementById('taskDescription').value = '';
+                document.getElementById('taskPriority').value = 'Thấp';
+                document.getElementById('assignTo').value = '';
+
+                btn.disabled = false;
+                btn.textContent = 'Thêm công việc';
+
+                this.showNotification('✅ Thêm công việc thành công!');
+            }
+
+            completeTask(taskId) {
+                const employeeName = document.getElementById('employeeName').value;
+                if (!employeeName) {
+                    alert('Vui lòng chọn tên của bạn trước!');
+                    return;
+                }
+
+                const taskIndex = tasks.findIndex(t => t.id === taskId);
+                if (taskIndex !== -1 && !tasks[taskIndex].completed) {
+                    tasks[taskIndex].completed = true;
+                    tasks[taskIndex].completedBy = employeeName;
+                    tasks[taskIndex].completedAt = new Date().toLocaleString('vi-VN');
+                    
+                    this.saveTasksToFirebase();
+                    this.showNotification(`✅ Hoàn thành: "${tasks[taskIndex].title}"`);
+                }
+            }
+
+            updateAllViews() {
+                this.updateManagerView();
+                this.updateEmployeeView();
+            }
+
+            updateManagerView() {
+                const totalTasks = tasks.length;
+                const completedTasks = tasks.filter(t => t.completed).length;
+                
+                const totalEl = document.getElementById('totalTasks');
+                const completedEl = document.getElementById('completedTasks');
+                
+                if (totalEl) totalEl.textContent = totalTasks;
+                if (completedEl) completedEl.textContent = completedTasks;
+
+                const taskListElement = document.getElementById('managerTaskList');
+                if (!taskListElement) return;
+                
+                if (tasks.length === 0) {
+                    taskListElement.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">Chưa có công việc nào</div>';
+                    return;
+                }
+
+                taskListElement.innerHTML = tasks.map(task => `
+                    <div class="task-item ${task.completed ? 'completed' : ''}">
+                        <div class="task-title">${task.title || 'Không có tiêu đề'}</div>
+                        <div class="task-description">${task.description || ''}</div>
+                        <div class="task-meta">
+                            <span>Độ ưu tiên: ${task.priority || 'Thấp'}</span>
+                            <span class="task-status ${task.completed ? 'status-completed' : 'status-pending'}">
+                                ${task.completed ? 'Hoàn thành' : 'Chờ xử lý'}
+                            </span>
+                        </div>
+                        ${task.assignTo ? `<div style="margin-top: 5px; font-size: 0.85rem; color: #666;">👤 Giao cho: ${task.assignTo}</div>` : ''}
+                        ${task.completed ? `
+                            <div class="completion-info">
+                                ✅ Hoàn thành bởi: <strong>${task.completedBy}</strong><br>
+                                🕐 Thời gian: ${task.completedAt}
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+            }
+
+            updateEmployeeView() {
+                const taskListElement = document.getElementById('employeeTaskList');
+                if (!taskListElement) return;
+                
+                const employeeName = document.getElementById('employeeName').value;
+                
+                if (!employeeName) {
+                    taskListElement.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">👆 Vui lòng chọn tên của bạn ở trên</div>';
+                    return;
+                }
+
+                const availableTasks = tasks.filter(t => 
+                    !t.completed && 
+                    (t.assignTo === '' || t.assignTo === employeeName)
+                );
+                
+                if (availableTasks.length === 0) {
+                    taskListElement.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">🎉 Không có công việc nào cần làm!</div>';
+                    return;
+                }
+
+                taskListElement.innerHTML = availableTasks.map(task => `
+                    <div class="task-item">
+                        <div class="task-title">${task.title || 'Không có tiêu đề'}</div>
+                        <div class="task-description">${task.description || ''}</div>
+                        <div class="task-meta">
+                            <span>Độ ưu tiên: ${task.priority || 'Thấp'}</span>
+                            <span>📅 ${task.createdAt || ''}</span>
+                        </div>
+                        ${task.assignTo ? `<div style="margin-top: 5px; font-size: 0.85rem; color: #4facfe;">👤 Được giao riêng cho bạn</div>` : ''}
+                        <button class="employee-complete-btn" onclick="taskManager.completeTask(${task.id})">
+                            ✅ Hoàn thành
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            updateConnectionStatus(online) {
+                const statusEl = document.getElementById('connectionStatus');
+                if (online) {
+                    statusEl.className = 'connection-status online';
+                    statusEl.innerHTML = '🟢 Đồng bộ thời gian thực';
+                } else {
+                    statusEl.className = 'connection-status offline';
+                    statusEl.innerHTML = '🟡 Chế độ offline';
+                }
+            }
+
+            showSetupNotice() {
+                document.getElementById('setupNotice').style.display = 'block';
+            }
+
+            hideLoading() {
+                const loadingEl = document.getElementById('loadingMessage');
+                if (loadingEl) {
+                    loadingEl.style.display = 'none';
+                }
+            }
+
+            showNotification(message) {
+                const notification = document.createElement('div');
+                notification.className = 'success';
+                notification.textContent = message;
+                notification.style.position = 'fixed';
+                notification.style.top = '80px';
+                notification.style.left = '20px';
+                notification.style.right = '20px';
+                notification.style.zIndex = '1000';
+                notification.style.borderRadius = '8px';
+                notification.style.maxWidth = '440px';
+                notification.style.margin = '0 auto';
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 3000);
+            }
+
+            addSampleDataIfEmpty() {
+                if (tasks.length === 0) {
+                    console.log('📝 Thêm dữ liệu mẫu...');
+                    const sampleTasks = [
+                        {
+                            id: Date.now() - 1000,
+                            title: 'Hoàn thành báo cáo tháng',
+                            description: 'Tổng hợp dữ liệu và viết báo cáo tháng 9',
+                            priority: 'Cao',
+                            assignTo: 'Nguyễn Văn A',
+                            completed: false,
+                            completedBy: '',
+                            completedAt: '',
+                            createdAt: new Date().toLocaleString('vi-VN')
+                        },
+                        {
+                            id: Date.now() - 2000,
+                            title: 'Cập nhật website công ty',
+                            description: 'Thêm các sản phẩm mới vào trang web',
+                            priority: 'Trung bình',
+                            assignTo: '',
+                            completed: false,
+                            completedBy: '',
+                            completedAt: '',
+                            createdAt: new Date().toLocaleString('vi-VN')
+                        }
+                    ];
+                    
+                    tasks = sampleTasks;
+                    this.saveTasksToFirebase();
+                    this.showNotification('📝 Đã thêm dữ liệu mẫu');
+                }
+            }
+        }
+
+        // Khởi tạo ứng dụng khi DOM sẵn sàng
+        let taskManager;
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎯 DOM đã tải xong, khởi tạo TaskManager...');
+            taskManager = new TaskManager();
+        });
+    </script>
