@@ -1,231 +1,255 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#4facfe">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Quản lý Công việc">
-    <title>📋 Hệ thống Quản lý Công việc</title>
-    
-    <!-- Firebase SDK -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
-    
-    <style>
-        * {margin:0;padding:0;box-sizing:border-box;}
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh; color:#333;
-        }
-        .container {max-width:480px;margin:0 auto;background:white;min-height:100vh;position:relative;box-shadow:0 0 20px rgba(0,0,0,0.1);}
-        .header {background:linear-gradient(135deg,#4facfe 0%,#00f2fe 100%);color:white;padding:20px;text-align:center;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
-        .header h1 {font-size:1.5rem;margin-bottom:10px;}
-        .role-toggle {display:flex;background:rgba(255,255,255,0.2);border-radius:25px;padding:4px;margin-top:15px;}
-        .role-btn {flex:1;padding:8px 16px;border:none;border-radius:20px;background:transparent;color:white;cursor:pointer;transition:all 0.3s;font-size:0.9rem;}
-        .role-btn.active {background:white;color:#4facfe;box-shadow:0 2px 8px rgba(0,0,0,0.2);}
-        .connection-status {padding:10px;text-align:center;font-size:0.8rem;margin-top:10px;border-radius:5px;}
-        .online {background:#d4edda;color:#155724;}
-        .offline {background:#f8d7da;color:#721c24;}
-        .setup-notice {background:#d4edda;color:#155724;padding:15px;margin:10px;border-radius:8px;text-align:left;font-size:0.85rem;line-height:1.4;display:none;}
-        .content {padding:20px;padding-bottom:100px;}
-        .manager-section,.employee-section {display:none;}
-        .manager-section.active,.employee-section.active {display:block;}
-        .add-task-form {background:#f8f9ff;padding:20px;border-radius:12px;margin-bottom:20px;border:2px dashed #4facfe;}
-        .form-group {margin-bottom:15px;}
-        .form-group label {display:block;margin-bottom:5px;font-weight:600;color:#555;}
-        .form-group input,.form-group textarea,.form-group select {width:100%;padding:12px;border:2px solid #e1e5e9;border-radius:8px;font-size:1rem;transition:border-color 0.3s;}
-        .form-group input:focus,.form-group textarea:focus,.form-group select:focus {outline:none;border-color:#4facfe;}
-        .btn-primary {background:linear-gradient(135deg,#4facfe 0%,#00f2fe 100%);color:white;border:none;padding:12px 24px;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;width:100%;transition:transform 0.2s;}
-        .btn-primary:hover {transform:translateY(-2px);}
-        .btn-primary:disabled {opacity:0.6;cursor:not-allowed;transform:none;}
-        .employee-management {background:#e7f3ff;padding:20px;border-radius:12px;margin-bottom:20px;border:2px dashed #007bff;}
-        .employee-list {display:flex;flex-wrap:wrap;gap:8px;margin-bottom:15px;}
-        .employee-tag {background:#28a745;color:white;padding:6px 12px;border-radius:20px;font-size:0.85rem;display:flex;align-items:center;gap:8px;}
-        .employee-tag .remove-employee {background:rgba(255,255,255,0.3);border:none;color:white;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;}
-        .add-employee-form {display:flex;gap:10px;align-items:center;}
-        .add-employee-form input {flex:1;padding:8px 12px;border:2px solid #dee2e6;border-radius:6px;font-size:0.9rem;}
-        .add-employee-btn {background:#007bff;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:0.9rem;white-space:nowrap;}
-        .loading {text-align:center;padding:20px;color:#666;}
-        .success {background:#d4edda;color:#155724;padding:15px;border-radius:8px;margin-bottom:20px;}
-        @media (max-width:480px){.container{margin:0}.content{padding:15px}.header{padding:15px}.stats{grid-template-columns:1fr}}
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📋 Hệ thống Quản lý Công việc</title>
+
+  <!-- Firebase SDK -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f9;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      min-height: 100vh;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .employee-management {
+      background: #e7f3ff;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      border: 2px dashed #007bff;
+    }
+    .employee-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+    .employee-tag {
+      background: #28a745;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .add-employee-form {
+      display: flex;
+      gap: 10px;
+    }
+    .add-employee-form input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 2px solid #dee2e6;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+    .add-employee-btn {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .add-employee-btn:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+    }
+    .employee-select {
+      margin-top: 20px;
+    }
+    .employee-select label {
+      font-weight: bold;
+    }
+    .employee-select select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📋 Hệ thống Quản lý Công việc</h1>
-            <div class="role-toggle">
-                <button class="role-btn active" id="managerBtn">👨‍💼 Quản lý</button>
-                <button class="role-btn" id="employeeBtn">👷‍♂️ Nhân viên</button>
-            </div>
-            <div id="connectionStatus" class="connection-status offline">
-                🔴 Đang kết nối database...
-            </div>
-        </div>
+  <div class="container">
+    <h1>📋 Quản lý Công việc</h1>
 
-        <div class="content">
-            <div id="setupNotice" class="setup-notice">
-                <h4>✅ Hệ thống đã sẵn sàng!</h4>
-                <p>Firebase đã được cấu hình và kết nối thành công. Dữ liệu sẽ đồng bộ tự động giữa tất cả các thiết bị.</p>
-            </div>
-
-            <!-- Quản lý -->
-            <div class="manager-section active" id="managerSection">
-                <div class="employee-management">
-                    <h3>👥 Quản lý Nhân viên</h3>
-                    <div class="employee-list" id="employeeList"></div>
-                    <div class="add-employee-form">
-                        <input type="text" id="newEmployeeName" placeholder="Nhập tên nhân viên mới..." maxlength="30">
-                        <button class="add-employee-btn" id="addEmployeeBtn">➕ Thêm</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Nhân viên -->
-            <div class="employee-section" id="employeeSection">
-                <div class="employee-select">
-                    <label for="employeeName">👤 Chọn tên của bạn:</label>
-                    <select id="employeeName">
-                        <option value="">-- Chọn tên --</option>
-                    </select>
-                </div>
-            </div>
-        </div>
+    <div class="employee-management">
+      <h3>👥 Quản lý Nhân viên</h3>
+      <div class="employee-list" id="employeeList"></div>
+      <div class="add-employee-form">
+        <input type="text" id="newEmployeeName" placeholder="Nhập tên nhân viên mới..." maxlength="30" />
+        <button class="add-employee-btn" id="addEmployeeBtn">➕ Thêm</button>
+      </div>
     </div>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyABkEBU-WfsmAKYbbQzFL1rVl1FhYmyJEU",
-            authDomain: "task-manager-2025-ac725.firebaseapp.com",
-            databaseURL: "https://task-manager-2025-ac725-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "task-manager-2025-ac725",
-            storageBucket: "task-manager-2025-ac725.firebasestorage.app",
-            messagingSenderId: "971332334564",
-            appId: "1:971332334564:web:9edbb1d56068f021bb8df1"
-        };
+    <div class="employee-select">
+      <label for="employeeName">👤 Chọn tên của bạn:</label>
+      <select id="employeeName">
+        <option value="">-- Chọn tên --</option>
+      </select>
+    </div>
+  </div>
 
-        let database = null;
-        let employees = [];
-        let employeesListener = null;
-        let isOnline = false;
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyABkEBU-WfsmAKYbbQzFL1rVl1FhYmyJEU",
+      authDomain: "task-manager-2025-ac725.firebaseapp.com",
+      databaseURL: "https://task-manager-2025-ac725-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "task-manager-2025-ac725",
+      storageBucket: "task-manager-2025-ac725.firebasestorage.app",
+      messagingSenderId: "971332334564",
+      appId: "1:971332334564:web:9edbb1d56068f021bb8df1"
+    };
 
-        class TaskManager {
-            constructor() {
-                this.initializeApp();
-                this.setupEventListeners();
-            }
+    let database = null;
+    let employees = [];
+    let isOnline = false;
 
-            async initializeApp() {
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                }
-                database = firebase.database();
+    class TaskManager {
+      constructor() {
+        this.initializeApp();
+        this.setupEventListeners();
+      }
 
-                const testRef = database.ref('.info/connected');
-                testRef.on('value', (snapshot) => {
-                    if (snapshot.val() === true) {
-                        isOnline = true;
-                        this.loadEmployeesFromFirebase();
-                    } else {
-                        isOnline = false;
-                        this.loadEmployeesFromLocalStorage();
-                    }
-                });
-            }
+      async initializeApp() {
+        if (!firebase.apps.length) {
+          firebase.initializeApp(firebaseConfig);
+        }
+        database = firebase.database();
 
-            setupEventListeners() {
-                document.getElementById('addEmployeeBtn').addEventListener('click', () => this.addEmployee());
-                document.getElementById('newEmployeeName').addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') this.addEmployee();
-                });
-            }
+        const testRef = database.ref('.info/connected');
+        testRef.on('value', (snapshot) => {
+          if (snapshot.val() === true) {
+            isOnline = true;
+            this.loadEmployeesFromFirebase();
+          } else {
+            isOnline = false;
+            this.loadEmployeesFromLocalStorage();
+          }
+        });
+      }
 
-            addEmployee() {
-                const nameInput = document.getElementById('newEmployeeName');
-                const newName = nameInput.value.trim();
+      setupEventListeners() {
+        document.getElementById('addEmployeeBtn').addEventListener('click', () => this.addEmployee());
+        document.getElementById('newEmployeeName').addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') this.addEmployee();
+        });
+      }
 
-                if (!newName) {
-                    alert('Vui lòng nhập tên nhân viên!');
-                    return;
-                }
-                if (employees.includes(newName)) {
-                    alert('Tên này đã tồn tại!');
-                    return;
-                }
+      addEmployee() {
+        const nameInput = document.getElementById('newEmployeeName');
+        const newName = nameInput.value.trim();
 
-                employees.push(newName);
-                this.saveEmployeesToFirebase();
-
-                nameInput.value = '';
-                this.updateEmployeeDropdowns();
-                this.updateEmployeeList();
-            }
-
-            saveEmployeesToFirebase() {
-                if (!isOnline || !database) {
-                    this.saveEmployeesToLocalStorage();
-                    return;
-                }
-                const employeesRef = database.ref('employees');
-                const employeesObj = {};
-                employees.forEach((emp, i) => { employeesObj[`employee_${i}`] = emp; });
-                employeesRef.set(employeesObj).then(() => this.saveEmployeesToLocalStorage());
-            }
-
-            saveEmployeesToLocalStorage() {
-                localStorage.setItem('taskManagementEmployees', JSON.stringify(employees));
-            }
-
-            loadEmployeesFromFirebase() {
-                if (employeesListener) employeesListener.off();
-                const employeesRef = database.ref('employees');
-                employeesListener = employeesRef.on('value', (snapshot) => {
-                    const data = snapshot.val();
-                    employees = data ? Object.values(data) : [];
-                    this.updateEmployeeDropdowns();
-                    this.updateEmployeeList();
-                });
-            }
-
-            loadEmployeesFromLocalStorage() {
-                const saved = localStorage.getItem('taskManagementEmployees');
-                employees = saved ? JSON.parse(saved) : [];
-                this.updateEmployeeDropdowns();
-                this.updateEmployeeList();
-            }
-
-            updateEmployeeDropdowns() {
-                const employeeNameSelect = document.getElementById('employeeName');
-                if (!employeeNameSelect) return;
-                employeeNameSelect.innerHTML = '<option value="">-- Chọn tên --</option>';
-                employees.forEach(emp => {
-                    const option = document.createElement('option');
-                    option.value = emp;
-                    option.textContent = emp;
-                    employeeNameSelect.appendChild(option);
-                });
-            }
-
-            updateEmployeeList() {
-                const employeeListElement = document.getElementById('employeeList');
-                if (!employeeListElement) return;
-                employeeListElement.innerHTML = employees.map(emp => `
-                    <div class="employee-tag">
-                        <span>👤 ${emp}</span>
-                    </div>
-                `).join('');
-            }
+        if (!newName) {
+          alert('Vui lòng nhập tên nhân viên!');
+          return;
+        }
+        if (employees.includes(newName)) {
+          alert('Tên này đã tồn tại!');
+          return;
         }
 
-        let taskManager;
-        document.addEventListener('DOMContentLoaded', () => {
-            taskManager = new TaskManager();
+        const btn = document.getElementById('addEmployeeBtn');
+        btn.disabled = true;
+        btn.textContent = 'Đang thêm...';
+
+        employees.push(newName);
+        this.saveEmployeesToFirebase();
+
+        // Cập nhật UI ngay
+        this.updateEmployeeList();
+        this.updateEmployeeDropdowns();
+
+        nameInput.value = '';
+        btn.disabled = false;
+        btn.textContent = '➕ Thêm';
+
+        console.log(`👤 Đã thêm nhân viên: ${newName}`);
+      }
+
+      saveEmployeesToFirebase() {
+        if (!isOnline || !database) {
+          this.saveEmployeesToLocalStorage();
+          return;
+        }
+        const employeesRef = database.ref('employees');
+        const employeesObj = {};
+        employees.forEach((emp, i) => {
+          employeesObj[`employee_${i}`] = emp;
         });
-    </script>
+        employeesRef.set(employeesObj).then(() => this.saveEmployeesToLocalStorage());
+      }
+
+      saveEmployeesToLocalStorage() {
+        localStorage.setItem('taskManagementEmployees', JSON.stringify(employees));
+      }
+
+      loadEmployeesFromFirebase() {
+        const employeesRef = database.ref('employees');
+        employeesRef.on('value', (snapshot) => {
+          const data = snapshot.val();
+          employees = data ? Object.values(data) : [];
+          this.updateEmployeeDropdowns();
+          this.updateEmployeeList();
+        });
+      }
+
+      loadEmployeesFromLocalStorage() {
+        const saved = localStorage.getItem('taskManagementEmployees');
+        employees = saved ? JSON.parse(saved) : [];
+        this.updateEmployeeDropdowns();
+        this.updateEmployeeList();
+      }
+
+      updateEmployeeDropdowns() {
+        const employeeNameSelect = document.getElementById('employeeName');
+        if (!employeeNameSelect) return;
+        employeeNameSelect.innerHTML = '<option value="">-- Chọn tên --</option>';
+        employees.forEach(emp => {
+          const option = document.createElement('option');
+          option.value = emp;
+          option.textContent = emp;
+          employeeNameSelect.appendChild(option);
+        });
+      }
+
+      updateEmployeeList() {
+        const employeeListElement = document.getElementById('employeeList');
+        if (!employeeListElement) return;
+        employeeListElement.innerHTML = employees.map(emp => `
+          <div class="employee-tag">
+            <span>👤 ${emp}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    let taskManager;
+    document.addEventListener('DOMContentLoaded', () => {
+      taskManager = new TaskManager();
+    });
+  </script>
 </body>
 </html>
-
-
