@@ -9,10 +9,6 @@
     <meta name="apple-mobile-web-app-title" content="Quản lý Công việc">
     <title>📋 Hệ thống Quản lý Công việc</title>
     
-    <!-- Firebase SDK -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
-    
     <style>
         * {
             margin: 0;
@@ -96,23 +92,6 @@
             color: #721c24;
         }
 
-        .setup-notice {
-            background: #d4edda;
-            color: #155724;
-            padding: 15px;
-            margin: 10px;
-            border-radius: 8px;
-            text-align: left;
-            font-size: 0.85rem;
-            line-height: 1.4;
-            display: none;
-        }
-
-        .setup-notice h4 {
-            margin-bottom: 8px;
-            color: #155724;
-        }
-
         .content {
             padding: 20px;
             padding-bottom: 100px;
@@ -124,6 +103,88 @@
 
         .manager-section.active, .employee-section.active {
             display: block;
+        }
+
+        .employee-management {
+            background: #fff7e6;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 2px solid #ffa726;
+        }
+
+        .employee-management h3 {
+            color: #f57c00;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .employee-list {
+            margin-bottom: 15px;
+        }
+
+        .employee-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .employee-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .add-employee-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .add-employee-input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .btn-small {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-add {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-add:hover {
+            background: #45a049;
+        }
+
+        .btn-remove {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-remove:hover {
+            background: #d32f2f;
+        }
+
+        .btn-remove:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
         }
 
         .add-task-form {
@@ -404,18 +465,26 @@
         </div>
 
         <div class="content">
-            <div id="setupNotice" class="setup-notice">
-                <h4>✅ Hệ thống đã sẵn sàng!</h4>
-                <p>Firebase đã được cấu hình và kết nối thành công. Dữ liệu sẽ đồng bộ tự động giữa tất cả các thiết bị.</p>
-                <p><strong>Hướng dẫn sử dụng:</strong> Quản lý thêm công việc, nhân viên chọn tên và hoàn thành task.</p>
-            </div>
-
             <div id="loadingMessage" class="loading">
                 🔄 Đang tải dữ liệu...
             </div>
 
             <!-- Manager Interface -->
             <div class="manager-section active" id="managerSection">
+                <!-- Employee Management -->
+                <div class="employee-management">
+                    <h3>👥 Quản lý Nhân viên</h3>
+                    
+                    <div class="add-employee-form">
+                        <input type="text" id="newEmployeeName" class="add-employee-input" placeholder="Nhập tên nhân viên mới...">
+                        <button class="btn-small btn-add" id="addEmployeeBtn">➕ Thêm</button>
+                    </div>
+                    
+                    <div class="employee-list" id="employeeList">
+                        <!-- Danh sách nhân viên sẽ được render ở đây -->
+                    </div>
+                </div>
+
                 <div class="stats">
                     <div class="stat-card">
                         <div class="stat-number" id="totalTasks">0</div>
@@ -449,11 +518,6 @@
                         <label for="assignTo">Giao cho:</label>
                         <select id="assignTo">
                             <option value="">-- Tất cả nhân viên --</option>
-                            <option value="Nguyễn Văn An">Nguyễn Văn An</option>
-                            <option value="Trần Thị Bình">Trần Thị Bình</option>
-                            <option value="Lê Minh Châu">Lê Minh Châu</option>
-                            <option value="Phạm Thu Duyên">Phạm Thu Duyên</option>
-                            <option value="Hoàng Quốc Em">Hoàng Quốc Em</option>
                         </select>
                     </div>
                     <button class="btn-primary" id="addTaskBtn">Thêm công việc</button>
@@ -476,11 +540,6 @@
                     <label for="employeeName">👤 Chọn tên của bạn:</label>
                     <select id="employeeName">
                         <option value="">-- Chọn tên --</option>
-                        <option value="Nguyễn Văn An">Nguyễn Văn An</option>
-                        <option value="Trần Thị Bình">Trần Thị Bình</option>
-                        <option value="Lê Minh Châu">Lê Minh Châu</option>
-                        <option value="Phạm Thu Duyên">Phạm Thu Duyên</option>
-                        <option value="Hoàng Quốc Em">Hoàng Quốc Em</option>
                     </select>
                 </div>
 
@@ -493,23 +552,10 @@
     </div>
 
     <script>
-        // Cấu hình Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyABkEBU-WfsmAKYbbQzFL1rVl1FhYmyJEU",
-            authDomain: "task-manager-2025-ac725.firebaseapp.com",
-            databaseURL: "https://task-manager-2025-ac725-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "task-manager-2025-ac725",
-            storageBucket: "task-manager-2025-ac725.firebasestorage.app",
-            messagingSenderId: "971332334564",
-            appId: "1:971332334564:web:9edbb1d56068f021bb8df1"
-        };
-
         // Biến toàn cục
-        let database = null;
-        let isOnline = false;
         let tasks = [];
+        let employees = ['Bác Oanh', 'Bác Trang', 'Bác Út', 'Suri']; // Danh sách nhân viên mặc định
         let currentRole = 'manager';
-        let tasksListener = null;
 
         // App Manager Class
         class TaskManager {
@@ -518,38 +564,12 @@
                 this.setupEventListeners();
             }
 
-            async initializeApp() {
+            initializeApp() {
                 console.log('🚀 Khởi tạo ứng dụng...');
-                
-                try {
-                    if (!firebase.apps.length) {
-                        firebase.initializeApp(firebaseConfig);
-                    }
-                    database = firebase.database();
-                    
-                    // Test kết nối
-                    const testRef = database.ref('.info/connected');
-                    testRef.on('value', (snapshot) => {
-                        if (snapshot.val() === true) {
-                            isOnline = true;
-                            this.updateConnectionStatus(true);
-                            console.log('✅ Firebase kết nối thành công!');
-                            this.loadTasksFromFirebase();
-                            this.showSetupNotice();
-                        } else {
-                            isOnline = false;
-                            this.updateConnectionStatus(false);
-                            console.log('❌ Firebase mất kết nối');
-                            this.loadTasksFromLocalStorage();
-                        }
-                    });
-                    
-                } catch (error) {
-                    console.error('❌ Lỗi kết nối Firebase:', error);
-                    isOnline = false;
-                    this.updateConnectionStatus(false);
-                    this.loadTasksFromLocalStorage();
-                }
+                this.loadDataFromStorage();
+                this.updateConnectionStatus(true); // Chế độ online (dùng localStorage)
+                this.updateAllViews();
+                this.hideLoading();
             }
 
             setupEventListeners() {
@@ -560,15 +580,14 @@
                 // Add task
                 document.getElementById('addTaskBtn').addEventListener('click', () => this.addTask());
                 
+                // Employee management
+                document.getElementById('addEmployeeBtn').addEventListener('click', () => this.addEmployee());
+                document.getElementById('newEmployeeName').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.addEmployee();
+                });
+                
                 // Employee name change
                 document.getElementById('employeeName').addEventListener('change', () => this.updateEmployeeView());
-                
-                // Cleanup on unload
-                window.addEventListener('beforeunload', () => {
-                    if (tasksListener) {
-                        tasksListener.off();
-                    }
-                });
             }
 
             switchRole(role) {
@@ -593,102 +612,137 @@
                 }
             }
 
-            loadTasksFromFirebase() {
-                console.log('📥 Đang tải dữ liệu từ Firebase...');
-                
-                if (tasksListener) {
-                    tasksListener.off();
-                }
-                
-                const tasksRef = database.ref('tasks');
-                tasksListener = tasksRef.on('value', (snapshot) => {
-                    try {
-                        const data = snapshot.val();
-                        console.log('📊 Dữ liệu Firebase:', data);
-                        
-                        if (data && typeof data === 'object') {
-                            tasks = Object.keys(data).map(key => ({
-                                ...data[key],
-                                firebaseKey: key
-                            }));
-                        } else {
-                            tasks = [];
-                        }
-                        
-                        tasks.sort((a, b) => (b.id || 0) - (a.id || 0));
-                        console.log('✅ Đã tải', tasks.length, 'công việc từ Firebase');
-                        
-                        this.updateAllViews();
-                        this.hideLoading();
-                        
-                    } catch (error) {
-                        console.error('❌ Lỗi xử lý dữ liệu Firebase:', error);
-                        this.loadTasksFromLocalStorage();
-                    }
-                });
-            }
-
-            loadTasksFromLocalStorage() {
-                console.log('📱 Đang tải dữ liệu từ localStorage...');
+            loadDataFromStorage() {
+                // Load tasks
                 try {
                     const savedTasks = localStorage.getItem('taskManagementTasks');
                     tasks = savedTasks ? JSON.parse(savedTasks) : [];
-                    console.log('✅ Đã tải', tasks.length, 'công việc từ localStorage');
                 } catch (error) {
-                    console.error('❌ Lỗi đọc localStorage:', error);
+                    console.error('❌ Lỗi đọc tasks:', error);
                     tasks = [];
                 }
-                this.updateAllViews();
-                this.hideLoading();
-                
-                // Thêm dữ liệu mẫu nếu trống
-                setTimeout(() => this.addSampleDataIfEmpty(), 2000);
-            }
 
-            saveTasksToFirebase() {
-                if (!isOnline || !database) {
-                    console.log('⚠️ Offline - lưu vào localStorage');
-                    this.saveTasksToLocalStorage();
-                    return;
+                // Load employees
+                try {
+                    const savedEmployees = localStorage.getItem('taskManagementEmployees');
+                    if (savedEmployees) {
+                        employees = JSON.parse(savedEmployees);
+                    } else {
+                        // Lưu danh sách mặc định
+                        this.saveEmployeesToStorage();
+                    }
+                } catch (error) {
+                    console.error('❌ Lỗi đọc employees:', error);
+                    employees = ['Bác Oanh', 'Bác Trang', 'Bác Út', 'Suri'];
                 }
-                
-                console.log('💾 Đang lưu', tasks.length, 'công việc lên Firebase...');
-                
-                const tasksRef = database.ref('tasks');
-                const tasksObj = {};
-                
-                tasks.forEach((task, index) => {
-                    const key = task.firebaseKey || `task_${task.id || Date.now()}_${index}`;
-                    tasksObj[key] = {
-                        id: task.id,
-                        title: task.title,
-                        description: task.description,
-                        priority: task.priority,
-                        assignTo: task.assignTo,
-                        completed: task.completed,
-                        completedBy: task.completedBy,
-                        completedAt: task.completedAt,
-                        createdAt: task.createdAt
-                    };
-                });
-                
-                tasksRef.set(tasksObj)
-                    .then(() => {
-                        console.log('✅ Lưu Firebase thành công');
-                        this.saveTasksToLocalStorage();
-                    })
-                    .catch((error) => {
-                        console.error('❌ Lỗi lưu Firebase:', error);
-                        this.saveTasksToLocalStorage();
-                    });
+
+                console.log('✅ Đã tải', tasks.length, 'công việc và', employees.length, 'nhân viên');
             }
 
-            saveTasksToLocalStorage() {
+            saveTasksToStorage() {
                 try {
                     localStorage.setItem('taskManagementTasks', JSON.stringify(tasks));
-                    console.log('✅ Đã lưu vào localStorage');
                 } catch (error) {
-                    console.error('❌ Lỗi lưu localStorage:', error);
+                    console.error('❌ Lỗi lưu tasks:', error);
+                }
+            }
+
+            saveEmployeesToStorage() {
+                try {
+                    localStorage.setItem('taskManagementEmployees', JSON.stringify(employees));
+                } catch (error) {
+                    console.error('❌ Lỗi lưu employees:', error);
+                }
+            }
+
+            addEmployee() {
+                const nameInput = document.getElementById('newEmployeeName');
+                const name = nameInput.value.trim();
+                
+                if (!name) {
+                    alert('Vui lòng nhập tên nhân viên!');
+                    return;
+                }
+
+                if (employees.includes(name)) {
+                    alert('Nhân viên này đã tồn tại!');
+                    return;
+                }
+
+                employees.push(name);
+                this.saveEmployeesToStorage();
+                this.updateEmployeeDropdowns();
+                this.updateEmployeeList();
+                
+                nameInput.value = '';
+                this.showNotification(`➕ Đã thêm nhân viên: ${name}`);
+            }
+
+            removeEmployee(name) {
+                if (employees.length <= 1) {
+                    alert('Không thể xóa! Phải có ít nhất 1 nhân viên.');
+                    return;
+                }
+
+                if (!confirm(`Bạn có chắc chắn muốn xóa nhân viên "${name}"?`)) {
+                    return;
+                }
+
+                employees = employees.filter(emp => emp !== name);
+                this.saveEmployeesToStorage();
+                this.updateEmployeeDropdowns();
+                this.updateEmployeeList();
+                
+                // Reset employee selection if removed employee was selected
+                const employeeSelect = document.getElementById('employeeName');
+                if (employeeSelect.value === name) {
+                    employeeSelect.value = '';
+                    this.updateEmployeeView();
+                }
+
+                this.showNotification(`🗑️ Đã xóa nhân viên: ${name}`);
+            }
+
+            updateEmployeeList() {
+                const listElement = document.getElementById('employeeList');
+                if (!listElement) return;
+
+                listElement.innerHTML = employees.map(emp => `
+                    <div class="employee-item">
+                        <div class="employee-name">👤 ${emp}</div>
+                        <button class="btn-small btn-remove" onclick="taskManager.removeEmployee('${emp}')" 
+                                ${employees.length <= 1 ? 'disabled' : ''}>
+                            ➖ Xóa
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            updateEmployeeDropdowns() {
+                // Update assign dropdown
+                const assignSelect = document.getElementById('assignTo');
+                if (assignSelect) {
+                    const currentValue = assignSelect.value;
+                    assignSelect.innerHTML = '<option value="">-- Tất cả nhân viên --</option>' +
+                        employees.map(emp => `<option value="${emp}">${emp}</option>`).join('');
+                    
+                    // Restore previous selection if still valid
+                    if (employees.includes(currentValue)) {
+                        assignSelect.value = currentValue;
+                    }
+                }
+
+                // Update employee name dropdown
+                const employeeSelect = document.getElementById('employeeName');
+                if (employeeSelect) {
+                    const currentValue = employeeSelect.value;
+                    employeeSelect.innerHTML = '<option value="">-- Chọn tên --</option>' +
+                        employees.map(emp => `<option value="${emp}">${emp}</option>`).join('');
+                    
+                    // Restore previous selection if still valid
+                    if (employees.includes(currentValue)) {
+                        employeeSelect.value = currentValue;
+                    }
                 }
             }
 
@@ -720,7 +774,7 @@
                 };
 
                 tasks.unshift(task);
-                this.saveTasksToFirebase();
+                this.saveTasksToStorage();
 
                 // Reset form
                 document.getElementById('taskTitle').value = '';
@@ -731,7 +785,8 @@
                 btn.disabled = false;
                 btn.textContent = 'Thêm công việc';
 
-                this.showNotification('✅ Thêm công việc thành công!');
+                this.updateAllViews();
+                this.showNotification(`✅ Thêm công việc thành công: "${title}"`);
             }
 
             completeTask(taskId) {
@@ -747,7 +802,8 @@
                     tasks[taskIndex].completedBy = employeeName;
                     tasks[taskIndex].completedAt = new Date().toLocaleString('vi-VN');
                     
-                    this.saveTasksToFirebase();
+                    this.saveTasksToStorage();
+                    this.updateAllViews();
                     this.showNotification(`✅ Hoàn thành: "${tasks[taskIndex].title}"`);
                 }
             }
@@ -761,7 +817,8 @@
                 if (taskIndex !== -1) {
                     const taskTitle = tasks[taskIndex].title;
                     tasks.splice(taskIndex, 1);
-                    this.saveTasksToFirebase();
+                    this.saveTasksToStorage();
+                    this.updateAllViews();
                     this.showNotification(`🗑️ Đã xóa: "${taskTitle}"`);
                 }
             }
@@ -781,13 +838,16 @@
                 tasks = tasks.filter(t => !t.completed);
                 const deletedCount = beforeCount - tasks.length;
                 
-                this.saveTasksToFirebase();
+                this.saveTasksToStorage();
+                this.updateAllViews();
                 this.showNotification(`🗑️ Đã xóa ${deletedCount} công việc đã hoàn thành`);
             }
 
             updateAllViews() {
                 this.updateManagerView();
                 this.updateEmployeeView();
+                this.updateEmployeeDropdowns();
+                this.updateEmployeeList();
             }
 
             updateManagerView() {
@@ -835,7 +895,7 @@
                                 ${task.completed ? `
                                     <div class="completion-info">
                                         ✅ Hoàn thành bởi: <strong>${task.completedBy}</strong><br>
-                                        🕐 Thời gian: ${task.completedAt}
+                                        🕒 Thời gian: ${task.completedAt}
                                     </div>
                                 ` : ''}
                             </div>
@@ -890,15 +950,11 @@
                 const statusEl = document.getElementById('connectionStatus');
                 if (online) {
                     statusEl.className = 'connection-status online';
-                    statusEl.innerHTML = '🟢 Đồng bộ thời gian thực';
+                    statusEl.innerHTML = '🟢 Hệ thống sẵn sàng';
                 } else {
                     statusEl.className = 'connection-status offline';
                     statusEl.innerHTML = '🟡 Chế độ offline';
                 }
-            }
-
-            showSetupNotice() {
-                document.getElementById('setupNotice').style.display = 'block';
             }
 
             hideLoading() {
@@ -929,40 +985,6 @@
                     }
                 }, 3000);
             }
-
-            addSampleDataIfEmpty() {
-                if (tasks.length === 0) {
-                    console.log('📝 Thêm dữ liệu mẫu...');
-                    const sampleTasks = [
-                        {
-                            id: Date.now() - 1000,
-                            title: 'Hoàn thành báo cáo tháng',
-                            description: 'Tổng hợp dữ liệu và viết báo cáo tháng 9',
-                            priority: 'Cao',
-                            assignTo: 'Nguyễn Văn An',
-                            completed: false,
-                            completedBy: '',
-                            completedAt: '',
-                            createdAt: new Date().toLocaleString('vi-VN')
-                        },
-                        {
-                            id: Date.now() - 2000,
-                            title: 'Cập nhật website công ty',
-                            description: 'Thêm các sản phẩm mới vào trang web',
-                            priority: 'Trung bình',
-                            assignTo: '',
-                            completed: false,
-                            completedBy: '',
-                            completedAt: '',
-                            createdAt: new Date().toLocaleString('vi-VN')
-                        }
-                    ];
-                    
-                    tasks = sampleTasks;
-                    this.saveTasksToFirebase();
-                    this.showNotification('📝 Đã thêm dữ liệu mẫu');
-                }
-            }
         }
 
         // Khởi tạo ứng dụng khi DOM sẵn sàng
@@ -972,3 +994,5 @@
             taskManager = new TaskManager();
         });
     </script>
+</body>
+</html>
