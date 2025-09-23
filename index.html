@@ -3,37 +3,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Task & Employee Manager</title>
+  <title>Task Manager System</title>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
-    li { margin: 6px 0; }
-    button { margin-left: 10px; }
+    button { margin: 5px; }
     .done { text-decoration: line-through; color: gray; }
+    .tab { margin: 10px 0; }
   </style>
 </head>
 <body>
-  <h1>Task & Employee Manager</h1>
+  <h1>Task Manager System</h1>
 
-  <!-- Add Task -->
-  <h2>Add Task</h2>
-  <input type="text" id="taskInput" placeholder="Enter task"/>
-  <button onclick="addTask()">Add Task</button>
+  <!-- Tabs -->
+  <div class="tab">
+    <button onclick="showView('manager')">Manager View</button>
+    <button onclick="showView('employee')">Employee View</button>
+  </div>
 
-  <!-- Task List -->
-  <h3>Tasks</h3>
-  <ul id="taskList"></ul>
+  <!-- Manager View -->
+  <div id="managerView" style="display:none;">
+    <h2>Manager Panel</h2>
+    <h3>Add Employee</h3>
+    <input type="text" id="employeeName" placeholder="Employee name"/>
+    <input type="text" id="employeeRole" placeholder="Employee role"/>
+    <button onclick="addEmployee()">Add Employee</button>
+    <ul id="employeeList"></ul>
 
-  <!-- Add Employee -->
-  <h2>Add Employee</h2>
-  <input type="text" id="employeeName" placeholder="Employee name"/>
-  <input type="text" id="employeeRole" placeholder="Employee role"/>
-  <button onclick="addEmployee()">Add Employee</button>
+    <h3>Add Task</h3>
+    <input type="text" id="taskInput" placeholder="Task name"/>
+    <select id="assignEmployee"></select>
+    <button onclick="addTask()">Assign Task</button>
 
-  <!-- Employee List -->
-  <h3>Employees</h3>
-  <ul id="employeeList"></ul>
+    <h3>All Tasks</h3>
+    <ul id="allTaskList"></ul>
+  </div>
+
+  <!-- Employee View -->
+  <div id="employeeView" style="display:none;">
+    <h2>Employee Panel</h2>
+    <label>Select Employee: </label>
+    <select id="employeeSelector" onchange="loadEmployeeTasks()"></select>
+    <h3>My Tasks</h3>
+    <ul id="myTaskList"></ul>
+  </div>
 
   <script>
     // Firebase config
@@ -47,98 +61,125 @@
       appId: "YOUR_APP_ID"
     };
 
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+    const db = firebase.database();
 
-    // ===== TASKS =====
-    function addTask() {
-      const taskInput = document.getElementById("taskInput");
-      const task = { name: taskInput.value, done: false };
-      if (task.name.trim() !== "") {
-        database.ref("tasks").push(task);
-        taskInput.value = "";
-      }
+    // Tab switcher
+    function showView(view) {
+      document.getElementById("managerView").style.display = (view === "manager") ? "block" : "none";
+      document.getElementById("employeeView").style.display = (view === "employee") ? "block" : "none";
     }
-
-    function toggleTask(id, done) {
-      database.ref("tasks/" + id).update({ done: !done });
-    }
-
-    function deleteTask(id) {
-      database.ref("tasks/" + id).remove();
-    }
-
-    function renderTasks(tasks) {
-      const taskList = document.getElementById("taskList");
-      taskList.innerHTML = "";
-      for (let id in tasks) {
-        const task = tasks[id];
-        const li = document.createElement("li");
-        li.className = task.done ? "done" : "";
-
-        const span = document.createElement("span");
-        span.innerText = task.name;
-
-        const toggleBtn = document.createElement("button");
-        toggleBtn.innerText = task.done ? "Undo" : "Done";
-        toggleBtn.onclick = () => toggleTask(id, task.done);
-
-        const delBtn = document.createElement("button");
-        delBtn.innerText = "Delete";
-        delBtn.onclick = () => deleteTask(id);
-
-        li.appendChild(span);
-        li.appendChild(toggleBtn);
-        li.appendChild(delBtn);
-
-        taskList.appendChild(li);
-      }
-    }
-
-    database.ref("tasks").on("value", (snapshot) => {
-      const tasks = snapshot.val() || {};
-      renderTasks(tasks);
-    });
 
     // ===== EMPLOYEES =====
     function addEmployee() {
-      const nameInput = document.getElementById("employeeName");
-      const roleInput = document.getElementById("employeeRole");
-      const employee = { name: nameInput.value, role: roleInput.value };
-
-      if (employee.name.trim() !== "" && employee.role.trim() !== "") {
-        database.ref("employees").push(employee);
-        nameInput.value = "";
-        roleInput.value = "";
+      const name = document.getElementById("employeeName").value;
+      const role = document.getElementById("employeeRole").value;
+      if (name.trim() && role.trim()) {
+        db.ref("employees").push({ name, role });
+        document.getElementById("employeeName").value = "";
+        document.getElementById("employeeRole").value = "";
       }
-    }
-
-    function deleteEmployee(id) {
-      database.ref("employees/" + id).remove();
     }
 
     function renderEmployees(employees) {
       const employeeList = document.getElementById("employeeList");
+      const assignSelect = document.getElementById("assignEmployee");
+      const empSelector = document.getElementById("employeeSelector");
       employeeList.innerHTML = "";
+      assignSelect.innerHTML = "";
+      empSelector.innerHTML = "";
+
       for (let id in employees) {
         const emp = employees[id];
+        // Manager list
         const li = document.createElement("li");
-        li.innerText = `${emp.name} - ${emp.role}`;
-
-        const delBtn = document.createElement("button");
-        delBtn.innerText = "Delete";
-        delBtn.onclick = () => deleteEmployee(id);
-
-        li.appendChild(delBtn);
+        li.innerText = `${emp.name} (${emp.role})`;
         employeeList.appendChild(li);
+
+        // Assign task select
+        const option1 = document.createElement("option");
+        option1.value = id;
+        option1.innerText = emp.name;
+        assignSelect.appendChild(option1);
+
+        // Employee view selector
+        const option2 = document.createElement("option");
+        option2.value = id;
+        option2.innerText = emp.name;
+        empSelector.appendChild(option2);
       }
     }
 
-    database.ref("employees").on("value", (snapshot) => {
-      const employees = snapshot.val() || {};
-      renderEmployees(employees);
+    db.ref("employees").on("value", (snap) => {
+      renderEmployees(snap.val() || {});
     });
+
+    // ===== TASKS =====
+    function addTask() {
+      const name = document.getElementById("taskInput").value;
+      const employeeId = document.getElementById("assignEmployee").value;
+      if (name.trim() && employeeId) {
+        db.ref("tasks").push({ name, employeeId, done: false });
+        document.getElementById("taskInput").value = "";
+      }
+    }
+
+    function toggleTask(id, done) {
+      db.ref("tasks/" + id).update({ done: !done });
+    }
+
+    function renderAllTasks(tasks, employees) {
+      const list = document.getElementById("allTaskList");
+      list.innerHTML = "";
+      for (let id in tasks) {
+        const t = tasks[id];
+        const li = document.createElement("li");
+        const empName = employees && employees[t.employeeId] ? employees[t.employeeId].name : "Unknown";
+        li.innerHTML = `${t.name} → ${empName} [${t.done ? "Done" : "Pending"}]`;
+        list.appendChild(li);
+      }
+    }
+
+    function renderEmployeeTasks(tasks, empId) {
+      const list = document.getElementById("myTaskList");
+      list.innerHTML = "";
+      for (let id in tasks) {
+        const t = tasks[id];
+        if (t.employeeId === empId) {
+          const li = document.createElement("li");
+          li.className = t.done ? "done" : "";
+          li.innerHTML = t.name;
+
+          const btn = document.createElement("button");
+          btn.innerText = t.done ? "Undo" : "Mark Done";
+          btn.onclick = () => toggleTask(id, t.done);
+
+          li.appendChild(btn);
+          list.appendChild(li);
+        }
+      }
+    }
+
+    let employeesCache = {};
+    db.ref("employees").on("value", (snap) => {
+      employeesCache = snap.val() || {};
+    });
+
+    db.ref("tasks").on("value", (snap) => {
+      const tasks = snap.val() || {};
+      renderAllTasks(tasks, employeesCache);
+
+      const selectedEmp = document.getElementById("employeeSelector").value;
+      if (selectedEmp) renderEmployeeTasks(tasks, selectedEmp);
+    });
+
+    function loadEmployeeTasks() {
+      db.ref("tasks").once("value", (snap) => {
+        const tasks = snap.val() || {};
+        const selectedEmp = document.getElementById("employeeSelector").value;
+        renderEmployeeTasks(tasks, selectedEmp);
+      });
+    }
   </script>
 </body>
 </html>
