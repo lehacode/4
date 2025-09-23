@@ -25,6 +25,12 @@
   <!-- Manager View -->
   <div id="managerView" style="display:none;">
     <h2>Manager Panel</h2>
+
+    <h3>Manage Employees</h3>
+    <input type="text" id="employeeName" placeholder="Employee name"/>
+    <button onclick="addEmployee()">Add Employee</button>
+    <ul id="employeeList"></ul>
+
     <h3>Add Task (Chung)</h3>
     <input type="text" id="taskInput" placeholder="Task name"/>
     <button onclick="addTask()">Add Task</button>
@@ -64,18 +70,48 @@
     }
 
     // ===== EMPLOYEES =====
-    const employees = ["Nguyễn Văn A", "Trần Thị B", "Lê Văn C"]; // danh sách nhân viên mẫu
-    function loadEmployees() {
-      const empSelector = document.getElementById("employeeSelector");
-      empSelector.innerHTML = "";
-      employees.forEach(emp => {
-        const option = document.createElement("option");
-        option.value = emp;
-        option.innerText = emp;
-        empSelector.appendChild(option);
-      });
+    function addEmployee() {
+      const name = document.getElementById("employeeName").value;
+      if (name.trim()) {
+        db.ref("employees").push({ name });
+        document.getElementById("employeeName").value = "";
+      }
     }
-    loadEmployees();
+
+    function deleteEmployee(id) {
+      db.ref("employees/" + id).remove();
+    }
+
+    function renderEmployees(employees) {
+      const empList = document.getElementById("employeeList");
+      const empSelector = document.getElementById("employeeSelector");
+      empList.innerHTML = "";
+      empSelector.innerHTML = "";
+
+      for (let id in employees) {
+        const emp = employees[id];
+
+        // Manager list
+        const li = document.createElement("li");
+        li.innerText = emp.name;
+        const delBtn = document.createElement("button");
+        delBtn.innerText = "Delete";
+        delBtn.onclick = () => deleteEmployee(id);
+        li.appendChild(delBtn);
+        empList.appendChild(li);
+
+        // Employee dropdown
+        const option = document.createElement("option");
+        option.value = emp.name;
+        option.innerText = emp.name;
+        empSelector.appendChild(option);
+      }
+    }
+
+    // Load employees real-time
+    db.ref("employees").on("value", (snap) => {
+      renderEmployees(snap.val() || {});
+    });
 
     // ===== TASKS =====
     function addTask() {
@@ -160,6 +196,15 @@
         const selectedEmp = document.getElementById("employeeSelector").value;
         renderEmployeeTasks(tasks, selectedEmp);
       });
+    });
+
+    // ====== Khởi tạo mặc định nhân viên (chỉ chạy 1 lần) =====
+    db.ref("employees").once("value", (snap) => {
+      if (!snap.exists()) {
+        ["Bác Oanh", "Bác Trang", "Bác Út", "Suri"].forEach(name => {
+          db.ref("employees").push({ name });
+        });
+      }
     });
   </script>
 </body>
