@@ -25,16 +25,9 @@
   <!-- Manager View -->
   <div id="managerView" style="display:none;">
     <h2>Manager Panel</h2>
-    <h3>Add Employee</h3>
-    <input type="text" id="employeeName" placeholder="Employee name"/>
-    <input type="text" id="employeeRole" placeholder="Employee role"/>
-    <button onclick="addEmployee()">Add Employee</button>
-    <ul id="employeeList"></ul>
-
-    <h3>Add Task</h3>
+    <h3>Add Task (Chung)</h3>
     <input type="text" id="taskInput" placeholder="Task name"/>
-    <select id="assignEmployee"></select>
-    <button onclick="addTask()">Assign Task</button>
+    <button onclick="addTask()">Add Task</button>
 
     <h3>All Tasks</h3>
     <ul id="allTaskList"></ul>
@@ -44,8 +37,8 @@
   <div id="employeeView" style="display:none;">
     <h2>Employee Panel</h2>
     <label>Select Employee: </label>
-    <select id="employeeSelector" onchange="loadEmployeeTasks()"></select>
-    <h3>My Tasks</h3>
+    <select id="employeeSelector"></select>
+    <h3>Tasks</h3>
     <ul id="myTaskList"></ul>
   </div>
 
@@ -71,115 +64,103 @@
     }
 
     // ===== EMPLOYEES =====
-    function addEmployee() {
-      const name = document.getElementById("employeeName").value;
-      const role = document.getElementById("employeeRole").value;
-      if (name.trim() && role.trim()) {
-        db.ref("employees").push({ name, role });
-        document.getElementById("employeeName").value = "";
-        document.getElementById("employeeRole").value = "";
-      }
-    }
-
-    function renderEmployees(employees) {
-      const employeeList = document.getElementById("employeeList");
-      const assignSelect = document.getElementById("assignEmployee");
+    const employees = ["Nguyễn Văn A", "Trần Thị B", "Lê Văn C"]; // danh sách nhân viên mẫu
+    function loadEmployees() {
       const empSelector = document.getElementById("employeeSelector");
-      employeeList.innerHTML = "";
-      assignSelect.innerHTML = "";
       empSelector.innerHTML = "";
-
-      for (let id in employees) {
-        const emp = employees[id];
-        // Manager list
-        const li = document.createElement("li");
-        li.innerText = `${emp.name} (${emp.role})`;
-        employeeList.appendChild(li);
-
-        // Assign task select
-        const option1 = document.createElement("option");
-        option1.value = id;
-        option1.innerText = emp.name;
-        assignSelect.appendChild(option1);
-
-        // Employee view selector
-        const option2 = document.createElement("option");
-        option2.value = id;
-        option2.innerText = emp.name;
-        empSelector.appendChild(option2);
-      }
+      employees.forEach(emp => {
+        const option = document.createElement("option");
+        option.value = emp;
+        option.innerText = emp;
+        empSelector.appendChild(option);
+      });
     }
-
-    db.ref("employees").on("value", (snap) => {
-      renderEmployees(snap.val() || {});
-    });
+    loadEmployees();
 
     // ===== TASKS =====
     function addTask() {
       const name = document.getElementById("taskInput").value;
-      const employeeId = document.getElementById("assignEmployee").value;
-      if (name.trim() && employeeId) {
-        db.ref("tasks").push({ name, employeeId, done: false });
+      if (name.trim()) {
+        db.ref("tasks").push({ 
+          name, 
+          done: false, 
+          completedBy: "", 
+          completedAt: "" 
+        });
         document.getElementById("taskInput").value = "";
       }
     }
 
-    function toggleTask(id, done) {
-      db.ref("tasks/" + id).update({ done: !done });
+    function deleteTask(id) {
+      db.ref("tasks/" + id).remove();
     }
 
-    function renderAllTasks(tasks, employees) {
+    function completeTask(id, empName) {
+      const timestamp = new Date().toLocaleString();
+      db.ref("tasks/" + id).update({
+        done: true,
+        completedBy: empName,
+        completedAt: timestamp
+      });
+    }
+
+    function renderAllTasks(tasks) {
       const list = document.getElementById("allTaskList");
       list.innerHTML = "";
       for (let id in tasks) {
         const t = tasks[id];
         const li = document.createElement("li");
-        const empName = employees && employees[t.employeeId] ? employees[t.employeeId].name : "Unknown";
-        li.innerHTML = `${t.name} → ${empName} [${t.done ? "Done" : "Pending"}]`;
+        li.className = t.done ? "done" : "";
+        li.innerHTML = `${t.name} 
+          ${t.done ? `(Done by ${t.completedBy} at ${t.completedAt})` : ""}`;
+
+        if (t.done) {
+          const delBtn = document.createElement("button");
+          delBtn.innerText = "Delete";
+          delBtn.onclick = () => deleteTask(id);
+          li.appendChild(delBtn);
+        }
+
         list.appendChild(li);
       }
     }
 
-    function renderEmployeeTasks(tasks, empId) {
+    function renderEmployeeTasks(tasks, empName) {
       const list = document.getElementById("myTaskList");
       list.innerHTML = "";
       for (let id in tasks) {
         const t = tasks[id];
-        if (t.employeeId === empId) {
-          const li = document.createElement("li");
-          li.className = t.done ? "done" : "";
-          li.innerHTML = t.name;
+        const li = document.createElement("li");
+        li.className = t.done ? "done" : "";
+        li.innerHTML = `${t.name} 
+          ${t.done ? `(Done by ${t.completedBy})` : ""}`;
 
+        if (!t.done) {
           const btn = document.createElement("button");
-          btn.innerText = t.done ? "Undo" : "Mark Done";
-          btn.onclick = () => toggleTask(id, t.done);
-
+          btn.innerText = "Mark Done";
+          btn.onclick = () => completeTask(id, empName);
           li.appendChild(btn);
-          list.appendChild(li);
         }
+
+        list.appendChild(li);
       }
     }
 
-    let employeesCache = {};
-    db.ref("employees").on("value", (snap) => {
-      employeesCache = snap.val() || {};
-    });
-
     db.ref("tasks").on("value", (snap) => {
       const tasks = snap.val() || {};
-      renderAllTasks(tasks, employeesCache);
+      renderAllTasks(tasks);
 
       const selectedEmp = document.getElementById("employeeSelector").value;
       if (selectedEmp) renderEmployeeTasks(tasks, selectedEmp);
     });
 
-    function loadEmployeeTasks() {
+    document.getElementById("employeeSelector").addEventListener("change", () => {
       db.ref("tasks").once("value", (snap) => {
         const tasks = snap.val() || {};
         const selectedEmp = document.getElementById("employeeSelector").value;
         renderEmployeeTasks(tasks, selectedEmp);
       });
-    }
+    });
   </script>
 </body>
 </html>
